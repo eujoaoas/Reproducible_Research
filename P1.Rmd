@@ -1,0 +1,78 @@
+---
+title: "Course Project 1"
+author: "João Vítor Aguiar Santos"
+date: "17/09/2020"
+output: html_document
+---
+
+
+## Reading file and loading packages
+
+```
+library(knitr)
+knitr::opts_chunk$set(warning = FALSE)
+library(ggplot2)
+activity <- read.csv("activity.csv")
+```
+
+## Analysing data and making the histogram to show the total steps taken per day.
+
+```
+{activity$date <- as.POSIXct(activity$date,"%Y-%m-%d")
+weekday <- weekdays(activity$date)
+activity <- cbind(activity,weekday)
+summary(activity)
+total_steps <- with(activity, aggregate(steps, by = list(date), FUN = sum, na.rm = TRUE))
+names(total_steps) <- c("date", "steps"), echo = FALSE}
+hist(total_steps$steps, main = "Total steps taken per day", xlab = "Total steps taken per day", col = "darkred",
+     ylim = c(0,20), breaks = seq(0,25000, by=2500))
+mean(total_steps$steps)
+median(total_steps$steps)
+```
+
+## Average steps taken per day
+
+
+```
+{average_daily <- aggregate(activity$steps, by = list(activity$interval), FUN = mean, na.rm = TRUE)
+names(average_daily) <- c("interval", "mean"), echo = FALSE}
+plot(average_daily$interval, average_daily$mean, type = "l", col = "darkblue",
+     lwd = 2, xlab = "Inteval", ylab = "Average of steps", main = "Average of steps per interval")
+
+```
+
+## Imputed steps per day
+
+```
+{sum(is.na(activity$steps))
+imputed <- average_daily$mean[match(activity$interval, average_daily$interval)]
+activity_imputed <- transform(activity, steps = ifelse(is.na(activity$steps), yes = imputed, no = activity$steps))
+total_imputed <- aggregate(steps ~ date, activity_imputed, sum)
+names(total_imputed) <- c("Daily", "Daily_Steps"), echo = FALSE}
+hist(total_imputed$Daily_Steps, col = "darkblue", xlab = "Total steps per day", 
+     ylim = c(0,30), main = "Total Steps per day", breaks = seq(0,25000, by = 2500))
+     mean(total_imputed$Daily_Steps)
+median(total_imputed$Daily_Steps)
+```
+
+## Difference of the average steps between weekdays and weekends
+
+```
+activity$date <- as.Date(strptime(activity$date, format = "%Y-%m-%d"))
+activity$datetype <- sapply(activity$date, function(x){
+        
+        if(weekdays(x) == "Saturday" | weekdays(x) == "Sunday")
+        {y = "Weekend"}else
+        {y <- "weekday"}
+        y
+        
+})
+activity_by_date <- aggregate(steps~interval + datetype, activity, mean, na.rm = TRUE, echo = FALSE)
+plot<- ggplot(activity_by_date, aes(x = interval , y = steps, color = datetype)) +
+        geom_line() +
+        labs(title = "Average daily steps by type of date", x = "Interval", y = "Average number of steps") +
+        facet_wrap(~datetype, ncol = 1, nrow=2)
+print(plot)
+```
+
+###
